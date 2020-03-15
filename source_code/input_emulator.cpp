@@ -1,6 +1,3 @@
-//
-// Created by Wawerma on 24.02.2020.
-//
 #include "input_emulator.h"
 
 
