@@ -6,12 +6,10 @@
 #define CR_SYMBOL 0xD
 #define LF_SYMBOL 0xA
 #define SPACE_SYMBOL 0x20
-
 #define UNICODE
 #define _UNICODE
 
 #include <windows.h>
-
 #include <cstdlib>
 #include <iostream>
 #include <tchar.h>
