@@ -1,6 +1,3 @@
-//
-// Created by Wawerma on 22.02.2020.
-//
 #include "gui.h"
 
 const TCHAR MainWindow::delayInfoText[] = TEXT("Delay after pressing Start:");
