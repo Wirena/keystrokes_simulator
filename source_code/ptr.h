@@ -1,7 +1,3 @@
-//
-// Created by Wawerma on 02.03.2020.
-//
-
 #ifndef PTR_H
 #define PTR_H
 
