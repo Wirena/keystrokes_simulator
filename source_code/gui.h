@@ -1,7 +1,6 @@
 #ifndef GUI_H
 #define GUI_H
 #define WINVER 0x0503
-#define _WIN32_IE 0x300
 #define UNICODE
 #define _UNICODE
 #define IDI_MAINICON 101
