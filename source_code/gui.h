@@ -1,7 +1,3 @@
-//
-// Created by Wawerma on 22.02.2020.
-//
-
 #ifndef GUI_H
 #define GUI_H
 #define WINVER 0x0503
