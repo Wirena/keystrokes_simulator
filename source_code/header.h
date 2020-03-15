@@ -1,9 +1,3 @@
-//
-// Created by Wawerma on 23.02.2020.
-//
-
-
-
 #define UNICODE
 #define _UNICODE
 #define WINVER 0x0503
