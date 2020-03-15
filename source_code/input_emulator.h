@@ -1,7 +1,3 @@
-//
-// Created by Wawerma on 24.02.2020.
-//
-
 #ifndef INPUT_EMULATOR_H
 #define INPUT_EMULATOR_H
 #define WINVER 0x0503
