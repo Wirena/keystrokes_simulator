@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(CtrlV_KeyPaster)
+project(KeyPaster)
 set(CMAKE_CXX_STANDARD 14)
-add_executable(CtrlV_KeyPaster WIN32 gui.cpp gui.h input_emulator.h input_emulator.cpp ptr.h main.cpp header.h resource.rc resource.h)
-target_link_libraries(CtrlV_KeyPaster comctl32 UxTheme)
+add_executable(KeyPaster WIN32 gui.cpp gui.h input_emulator.h input_emulator.cpp ptr.h main.cpp header.h resource.rc resource.h)
+target_link_libraries(KeyPaster comctl32 UxTheme)
