@@ -5,11 +5,12 @@
 #ifndef GUI_H
 #define GUI_H
 #define WINVER 0x0503
-#define _WIN32_IE 0x1000
+#define _WIN32_IE 0x300
 #define UNICODE
 #define _UNICODE
-#define DELAY_INFO_TEXT TEXT("Delay after pressing Start:")
+#define IDI_MAINICON 101
 
+#include "resource.h"
 #include <windows.h>
 #include <winuser.h>
 #include <commctrl.h>
@@ -32,8 +33,6 @@ public:
 
     bool SetSubclassPrc(LRESULT CALLBACK(*subFunc)(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR));
 
-    //friend LRESULT CALLBACK MyWndProc (HWND , UINT , WPARAM , LPARAM , UINT_PTR ,DWORD_PTR );
-
     HWND GetHWND() { return controlHandle; };
 
     virtual ~Control();
@@ -52,7 +51,6 @@ public:
 class Edit : public Control {
 public:
     Edit(HWND hParentWindow, const TCHAR *name, int x, int y, int width, int height, HINSTANCE hInstance);;
-
 };
 
 class TrackBar : public Control {
@@ -71,23 +69,23 @@ public:
 
 class Static : public Control {
 public:
-    Static(HWND hParentWindow, const TCHAR *name, int x, int y, int width, int height, HINSTANCE hInstance);;
+    Static(HWND hParentWindow, const TCHAR *name, int x, int y, int width, int height, HINSTANCE hInstance);
 
 };
 
 class MainWindow {
+    static const TCHAR delayInfoText[];
+
     MainWindow() {};
     ptrWrap<TCHAR> editorTextPtr;
     HINSTANCE hInst;
-    TCHAR name[17] = TEXT("MainWindowClass");
+    TCHAR name[17] = TEXT("MainWindow");
     bool cStyleCallbackUsed = true;
-
 
     union {
         std::function<bool(const TCHAR *textPtr, unsigned length)> *stdFunctionalCallback;
 
         bool (*classicCallback)(const TCHAR *textPtr, unsigned length);
-        //callbackFunction(){};
     } keyEmulatorCallback;
 
     Button *clearButton = nullptr, *pasteButton = nullptr, *startButton = nullptr;
@@ -98,7 +96,8 @@ class MainWindow {
     WNDCLASSEX WindowClass = {0};
     int currentWidth;
     int currentHeight;
-
+    const int MIN_WIDTH = 410;
+    const int MIN_HEIGHT = 500;
 
     ATOM RegisterMainWindowClass();
 
@@ -109,40 +108,19 @@ class MainWindow {
     void FillEditFromClipboard();
 
 public:
-
-
     friend LRESULT CALLBACK MainProc(HWND, UINT, WPARAM, LPARAM);
-
-
 
     Edit *GetTextEditor() { return textEditor; };
 
-
-    const int MIN_WIDTH = 410;
-    const int MIN_HEIGHT = 500;
-
-
     int PrintText();
 
+    void SetKeyPressEmulatorFunc(std::function<bool(const TCHAR *, unsigned)> *callbackFunc);
 
-    int GetCurrentWidth() { return currentWidth; };
-
-    int GetCurrentHeight() { return currentHeight; };
-
-    void SetKeyPressEmulatorFunc(std::function<bool(const TCHAR *, unsigned )> *callbackFunc);
-
-    void SetKeyPressEmulatorFunc(bool(*classicCallback)(const TCHAR *, unsigned ));
-
-    void SetCurrentWidth(int width) { currentWidth = width; };
-
-    void SetCurrentHeight(int height) { currentHeight = height; };
-
-
+    void SetKeyPressEmulatorFunc(bool(*classicCallback)(const TCHAR *, unsigned));
 
     ~MainWindow();
 
     void InitGui(HINSTANCE hInst);
-
 
     static MainWindow *GetInstance() {
         static MainWindow instMain;
@@ -152,5 +130,4 @@ public:
 };
 
 LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-
 #endif

@@ -22,7 +22,7 @@
 #include <cstring>
 #include "ptr.h"
 
-void printKey(int length, const TCHAR *text);
+
 
 class InputEmulator {
     ptrWrap<INPUT> keys;

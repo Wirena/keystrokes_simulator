@@ -8,11 +8,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     std::function<bool(const TCHAR *, unsigned )> callbackFunc = std::bind(&InputEmulator::InputText,
                                                                                         inptEm, std::placeholders::_1,
                                                                                         std::placeholders::_2);
-    //FreeConsole();
     MainWindow *mainGUI = MainWindow::GetInstance();
     mainGUI->SetKeyPressEmulatorFunc(&callbackFunc);
     mainGUI->InitGui(hInstance);
-
     MSG message = {0};
     int mainWindowState = 0;
     while ((mainWindowState = GetMessage(&message, NULL, 0, 0)) != 0) {
@@ -22,6 +20,4 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         DispatchMessage(&message);
     }
     return message.wParam;
-
-    return 0;
 }

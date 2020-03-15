@@ -1,23 +1,9 @@
-
+//
+// Created by Wawerma on 22.02.2020.
+//
 #include "gui.h"
 
-ULONG_PTR EnableVisualStyles(VOID) {
-    TCHAR dir[MAX_PATH];
-    ULONG_PTR ulpActivationCookie = FALSE;
-    ACTCTX actCtx =
-            {
-                    sizeof(actCtx),
-                    ACTCTX_FLAG_RESOURCE_NAME_VALID
-                    | ACTCTX_FLAG_SET_PROCESS_DEFAULT
-                    | ACTCTX_FLAG_ASSEMBLY_DIRECTORY_VALID,
-                    TEXT("shell32.dll"), 0, 0, dir, (LPCTSTR) 124
-            };
-    UINT cch = GetSystemDirectory(dir, sizeof(dir) / sizeof(*dir));
-    if (cch >= sizeof(dir) / sizeof(*dir)) { return FALSE; /*shouldn't happen*/ }
-    dir[cch] = TEXT('\0');
-    ActivateActCtx(CreateActCtx(&actCtx), &ulpActivationCookie);
-    return ulpActivationCookie;
-}
+const TCHAR MainWindow::delayInfoText[] = TEXT("Delay after pressing Start:");
 
 
 LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -59,76 +45,52 @@ LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
             break;
         }
         case WM_CTLCOLORSTATIC: {
-            //if (mainWndInst->delayInfo->GetHWND() == (HWND)lparam || mainWndInst->delayTrackBar->GetHWND() ==(HWND)lparam)
-            {
-                return (INT_PTR) GetStockObject(WHITE_BRUSH);
-            }
+            return (INT_PTR) GetStockObject(WHITE_BRUSH);
         }
-
     }
     return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
 
-/*LRESULT CALLBACK
-MyWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData) {
-    MainWindow *mainWndInst = MainWindow::GetInstance();
-    std::cout<<"weee";
-    switch (msg) {
-        case WM_CTLCOLORSTATIC: {
-            std::cout<<"paintin";
-            HDC hdcStatic = (HDC) wparam;
-            SetTextColor(hdcStatic, RGB(0, 0, 0));
-            SetBkMode(hdcStatic, TRANSPARENT);
-            return (INT_PTR) GetStockObject(WHITE_BRUSH);
-        }
-
-    }
-
-    return DefSubclassProc(hwnd, msg, wparam, lparam);
-}
-*/
-
-
 ATOM MainWindow::RegisterMainWindowClass() {
+    auto icon = static_cast<HICON>(LoadImage(hInst, MAKEINTRESOURCE(MAIN_ICON), IMAGE_ICON, 64, 64, 0));
     WindowClass.cbSize = sizeof(WindowClass);
     WindowClass.style = CS_HREDRAW | CS_VREDRAW;
     WindowClass.lpfnWndProc = (WNDPROC) MainProc;
     WindowClass.lpszClassName = name;
     WindowClass.hInstance = hInst;
+    WindowClass.hIcon = icon;
+    WindowClass.hIconSm = icon;
     WindowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
     WindowClass.hbrBackground = static_cast<HBRUSH> (GetStockObject(WHITE_BRUSH));
     return RegisterClassEx(&WindowClass);
 }
 
 void MainWindow::InitGui(HINSTANCE hInst) {
-
+    this->hInst = hInst;
     InitCommonControls();
-    //EnableVisualStyles();
-
     RegisterMainWindowClass();
     hMainWnd = CreateWindow(name, TEXT("Paster"),
                             WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_CAPTION, 100, 100, MIN_WIDTH,
-                            MIN_HEIGHT, NULL, NULL, hInst, NULL);
-    //SetWindowTheme(hMainWnd,L"", NULL);
+                            MIN_HEIGHT, NULL, NULL, NULL, hInst);
     RECT mainWndClientCoords;
     GetClientRect(hMainWnd, &mainWndClientCoords);
     currentWidth = mainWndClientCoords.right;
     currentHeight = mainWndClientCoords.bottom;
     textEditor = new Edit(hMainWnd, TEXT("Editor"), 10, 10, 380, 350, hInst);
-    clearButton = new Button(hMainWnd, TEXT("Clear"), 250, 370, 60, 30, hInst);
-    pasteButton = new Button(hMainWnd, TEXT("Paste"), 320, 370, 60, 30, hInst);
+    clearButton = new Button(hMainWnd, TEXT("Clear"), 250, 375, 60, 30, hInst);
+    pasteButton = new Button(hMainWnd, TEXT("Paste"), 320, 375, 60, 30, hInst);
     delayTrackBar = new TrackBar(hMainWnd, TEXT("Delay"), 40, 410, 150, 30, hInst);
     startButton = new Button(hMainWnd, TEXT("Start"), 250, 420, 130, 30, hInst);
-    delayInfo = new Static(hMainWnd, DELAY_INFO_TEXT, 5, 370, 240, 20, hInst);
+    delayInfo = new Static(hMainWnd, delayInfoText, 40, 375, 200, 20, hInst);
     delayTrackBar->SetBuddys(hMainWnd, TEXT("1 sec"), TEXT("6 sec"));
-    //std::cout<<delayInfo->SetSubclassPrc(MyWndProc);
     SendMessage(delayTrackBar->GetHWND(), TBM_SETRANGE, true, MAKELPARAM(1000, 6000));
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETPOS, true, static_cast<LPARAM>(3000));
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, NULL, 2000);
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, NULL, 3000);
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, NULL, 4000);
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, NULL, 5000);
+    SendMessage(delayTrackBar->GetHWND(), TBM_SETPOS, true, 3000);
+    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, 0, 2000);
+    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, 0, 3000);
+    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, 0, 4000);
+    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, 0, 5000);
+
 }
 
 MainWindow::~MainWindow() {
@@ -138,7 +100,6 @@ MainWindow::~MainWindow() {
     delete delayTrackBar;
     delete textEditor;
     delete delayInfo;
-
 }
 
 void MainWindow::RelocateControls(int deltaX, int deltaY) {
@@ -148,7 +109,6 @@ void MainWindow::RelocateControls(int deltaX, int deltaY) {
     pasteButton->MoveControl(deltaX, deltaY);
     textEditor->ResizeControl(deltaX, deltaY);
     delayInfo->MoveControl(deltaX, deltaY);
-
 }
 
 void MainWindow::SetKeyPressEmulatorFunc(std::function<bool(const TCHAR *, unsigned)> *callbackFunc) {
@@ -163,13 +123,12 @@ void MainWindow::SetKeyPressEmulatorFunc(bool (*classicCallback)(const TCHAR *, 
 }
 
 int MainWindow::PrintText() {
-    Sleep(SendMessage(delayTrackBar->GetHWND(), TBM_GETPOS, NULL, NULL));
+    Sleep(SendMessage(delayTrackBar->GetHWND(), TBM_GETPOS, 0, 0));
     unsigned length = GetWindowTextLength(textEditor->GetHWND());
     editorTextPtr.require(length + 1);
     editorTextPtr.zeroAll();
     GetWindowText(textEditor->GetHWND(), editorTextPtr.getPtr(), length + 1);
     return callBack(editorTextPtr.getPtr(), length);
-
 }
 
 int MainWindow::callBack(TCHAR *text, unsigned length) {
@@ -177,21 +136,34 @@ int MainWindow::callBack(TCHAR *text, unsigned length) {
                                 : ((*(keyEmulatorCallback.stdFunctionalCallback))(text, length));
 }
 
+#define SHOW_CLIPBOARD_ERROR_MSG MessageBox(NULL, TEXT("Something went wrong with clipboard, close this message and try again"), TEXT("Error"),MB_OK | MB_ICONWARNING)
 void MainWindow::FillEditFromClipboard() {
-    OpenClipboard(hMainWnd);
+    if (!OpenClipboard(hMainWnd)) {
+        SHOW_CLIPBOARD_ERROR_MSG;
+        return;
+    }
     HANDLE hClipbrdData;
 #ifdef UNICODE
     hClipbrdData = GetClipboardData(CF_UNICODETEXT);
 #elif
     hClipbrdData = GetClipboardData(CF_TEXT);
 #endif
+    if (!hClipbrdData) {
+        SHOW_CLIPBOARD_ERROR_MSG;
+        CloseClipboard();
+        return;
+    }
     auto clipbrdPtr = static_cast<TCHAR *>(GlobalLock(hClipbrdData));
+    if (!clipbrdPtr) {
+        SHOW_CLIPBOARD_ERROR_MSG;
+        CloseClipboard();
+        return;
+    }
     SetWindowText(textEditor->GetHWND(), clipbrdPtr);
     GlobalUnlock(hClipbrdData);
     CloseClipboard();
-
 }
-
+#undef SHOW_CLIPBOARD_ERROR_MSG
 
 Control::Control(HWND
                  hParentWindow, DWORD
@@ -230,7 +202,7 @@ Static::Static(HWND
                int height, HINSTANCE
                hInstance)
         : Control(
-        hParentWindow, WS_VISIBLE | WS_CHILD | SS_CENTER, WC_STATIC, name, x, y,
+        hParentWindow, WS_VISIBLE | WS_CHILD | SS_LEFT, WC_STATIC, name, x, y,
         width, height, hInstance) {}
 
 Control::~Control() {
@@ -302,7 +274,6 @@ TrackBar::~TrackBar() {
         DestroyWindow(firstBuddy);
     if (secondBuddy)
         DestroyWindow(secondBuddy);
-
 }
 
 void Control::ResizeControl(int deltaX, int deltaY) {

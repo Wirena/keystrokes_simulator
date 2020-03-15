@@ -25,9 +25,7 @@ int InputEmulator::InputTextTmpVer(const TCHAR *text, unsigned length) {
     }
     unsigned leftOver = resultKeystokesAmount % SENDINPUT_LIMIT;
     unsigned fullPacks = resultKeystokesAmount / SENDINPUT_LIMIT;
-    //std::cout<<resultKeystokesAmount<<std::endl<<fullPacks<<std::endl<<leftOver;
     unsigned i = 0;
-
     for (; i < fullPacks; i++) {
         SendInput(SENDINPUT_LIMIT, ptr + i * SENDINPUT_LIMIT, sizeof(INPUT));
         Sleep(2000);
@@ -86,7 +84,7 @@ int InputEmulator::InputText(const TCHAR *text, unsigned length) {
     keys.require(resultKeystokesAmount);
     keys.zeroAll();
     FillKeysArray();
-    for (int i = 0; i < resultKeystokesAmount; i++)
+    for (unsigned i = 0; i < resultKeystokesAmount; i++)
         AddInputToQueue(keys.getPtr() + i);
     return 0;
 }
