@@ -1,3 +1,7 @@
+//
+// Created by Wawerma on 02.03.2020.
+//
+
 #ifndef PTR_H
 #define PTR_H
 
@@ -29,6 +33,9 @@ public:
 
     unsigned getAlloced();
 
+    ptrWrap &operator=(const ptrWrap &inst);
+
+    ptrWrap(const ptrWrap &inst);
 
     bool require(unsigned);
 
@@ -154,6 +161,29 @@ T *ptrWrap<T>::getPtr() {
 template<class T>
 void ptrWrap<T>::zeroAll() {
     memset(ptr, 0, sizeof(T) * unitsAllocated);
+}
+
+template<class T>
+ptrWrap<T>::ptrWrap(const ptrWrap &inst) {
+    this->myAlloc(inst.unitsAllocated);
+    this->overAllocRatio = inst.overAllocRatio;
+    this->unitsAllocated = inst.unitsAllocated;
+    this->allocLimitSet = inst.allocLimitSet;
+    this->allocLimit = inst.allocLimit;
+    this->overAllocRatio = inst.overAllocRatio;
+    memcpy(this->ptr, inst.ptr, sizeof(T) * inst.unitsAllocated);
+}
+
+template<class T>
+ptrWrap<T> &ptrWrap<T>::operator=(const ptrWrap &inst) {
+    this->myAlloc(inst.unitsAllocated);
+    this->overAllocRatio = inst.overAllocRatio;
+    this->unitsAllocated = inst.unitsAllocated;
+    this->allocLimitSet = inst.allocLimitSet;
+    this->allocLimit = inst.allocLimit;
+    this->overAllocRatio = inst.overAllocRatio;
+    memcpy(this->ptr, inst.ptr, sizeof(T) * inst.unitsAllocated);
+    return *this;
 }
 
 
