@@ -67,7 +67,7 @@ void MainWindow::InitGui(HINSTANCE hInst) {
     this->hInst = hInst;
     InitCommonControls();
     RegisterMainWindowClass();
-    hMainWnd = CreateWindow(name, TEXT("Paster 1.1"),
+    hMainWnd = CreateWindow(name, TEXT("Paster 1.0.1"),
                             WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_CAPTION, 100, 100, MIN_WIDTH,
                             MIN_HEIGHT, NULL, NULL, NULL, hInst);
     RECT mainWndClientCoords;
