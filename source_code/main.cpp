@@ -4,13 +4,14 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPSTR lpCmdLine,
                      int nShowCmd) {
-    InputEmulator *inptEm = InputEmulator::GetInstance();
-    std::function<bool(const TCHAR *, unsigned )> callbackFunc = std::bind(&InputEmulator::InputText,
-                                                                                        inptEm, std::placeholders::_1,
-                                                                                        std::placeholders::_2);
     MainWindow *mainGUI = MainWindow::GetInstance();
-    mainGUI->SetKeyPressEmulatorFunc(&callbackFunc);
     mainGUI->InitGui(hInstance);
+    TCHAR ** argList;
+    int argCount;
+    argList = CommandLineToArgvW(GetCommandLine(), &argCount);
+    if(argCount==2)
+        mainGUI->SetExecPath(argList[1]);
+
     MSG message = {0};
     int mainWindowState = 0;
     while ((mainWindowState = GetMessage(&message, NULL, 0, 0)) != 0) {
