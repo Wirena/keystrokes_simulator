@@ -1,7 +1,5 @@
 #include "gui.h"
 
-const TCHAR MainWindow::delayInfoText[] = TEXT("Delay after pressing Start:");
-
 
 LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     MainWindow *mainWndInst = MainWindow::GetInstance();
@@ -31,14 +29,36 @@ LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
         case WM_COMMAND: {
             if (reinterpret_cast<HWND>(lparam) == mainWndInst->startButton->GetHWND() &&
                 HIWORD(wparam) == BN_CLICKED) {
+                if (mainWndInst->processCaptured && mainWndInst->outType == OutputType::SLOW) {
+                    TCHAR delay[10]{0};
+                    GetWindowText(mainWndInst->delayEditor->GetHWND(), delay, 10);
+                    mainWndInst->inpSimulator->setSpeed(_wtoi(delay));
+                }
                 mainWndInst->PrintText();
+            } else if (reinterpret_cast<HWND>(lparam) == mainWndInst->modeSlowButton->GetHWND() &&
+                       HIWORD(wparam) == BN_CLICKED) {
+                mainWndInst->SetSlowMode(true);
+
+            } else if (reinterpret_cast<HWND>(lparam) == mainWndInst->modeFastButton->GetHWND() &&
+                       HIWORD(wparam) == BN_CLICKED) {
+                if (mainWndInst->processCaptured)
+                    mainWndInst->SetSlowMode(false);
+                else {
+                    MessageBox(0, TEXT("Drag and drop Aurora EXE to the Paster icon"), TEXT("Error"), MB_OK);
+                    SendMessage(mainWndInst->modeSlowButton->GetHWND(), BM_CLICK, 0, 0);
+                }
             } else if (reinterpret_cast<HWND>(lparam) == mainWndInst->clearButton->GetHWND() &&
                        HIWORD(wparam) == BN_CLICKED) {
                 SetWindowText(mainWndInst->GetTextEditor()->GetHWND(), TEXT(""));
             } else if (reinterpret_cast<HWND>(lparam) == mainWndInst->pasteButton->GetHWND() &&
                        HIWORD(wparam) == BN_CLICKED) {
                 mainWndInst->FillEditFromClipboard();
+            } else if (reinterpret_cast<HWND>(lparam) == mainWndInst->restartPrcButton->GetHWND() &&
+                       HIWORD(wparam) == BN_CLICKED) {
+                mainWndInst->restartPrc =
+                        BST_CHECKED == SendMessage(mainWndInst->restartPrcButton->GetHWND(), BM_GETCHECK, 0, 0);
             }
+
             break;
         }
         case WM_CTLCOLORSTATIC: {
@@ -64,10 +84,11 @@ ATOM MainWindow::RegisterMainWindowClass() {
 }
 
 void MainWindow::InitGui(HINSTANCE hInst) {
+    inpSimulator = InputSimulator::GetInstance();
     this->hInst = hInst;
     InitCommonControls();
     RegisterMainWindowClass();
-    hMainWnd = CreateWindow(name, TEXT("Paster 1.0.1"),
+    hMainWnd = CreateWindow(name, TEXT("Paster 1.1.0"),
                             WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_CAPTION, 100, 100, MIN_WIDTH,
                             MIN_HEIGHT, NULL, NULL, NULL, hInst);
     RECT mainWndClientCoords;
@@ -75,65 +96,87 @@ void MainWindow::InitGui(HINSTANCE hInst) {
     currentWidth = mainWndClientCoords.right;
     currentHeight = mainWndClientCoords.bottom;
     textEditor = new Edit(hMainWnd, TEXT("Editor"), 10, 10, 380, 350, hInst);
+    delayStatic = new Static(hMainWnd, TEXT("input delay, ms"), 80, 430, 100, 20, hInst);
+    delayEditor = new Edit(hMainWnd, TEXT("65"), WS_VISIBLE | WS_CHILD | ES_NUMBER | WS_BORDER, 185, 430, 40, 20,
+                           hInst);
+    TCHAR delayDefault[]{TEXT("65")};
+
     clearButton = new Button(hMainWnd, TEXT("Clear"), 250, 375, 60, 30, hInst);
     pasteButton = new Button(hMainWnd, TEXT("Paste"), 320, 375, 60, 30, hInst);
-    delayTrackBar = new TrackBar(hMainWnd, TEXT("Delay"), 40, 410, 150, 30, hInst);
     startButton = new Button(hMainWnd, TEXT("Start"), 250, 420, 130, 30, hInst);
-    delayInfo = new Static(hMainWnd, delayInfoText, 40, 375, 200, 20, hInst);
-    delayTrackBar->SetBuddys(hMainWnd, TEXT("1 sec"), TEXT("6 sec"));
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETRANGE, true, MAKELPARAM(1000, 6000));
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETPOS, true, 3000);
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, 0, 2000);
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, 0, 3000);
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, 0, 4000);
-    SendMessage(delayTrackBar->GetHWND(), TBM_SETTIC, 0, 5000);
+
+    modeFastButton = new Button(hMainWnd, TEXT("fast"), WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_GROUP, 10, 385,
+                                50, 20, hInst);
+    modeSlowButton = new Button(hMainWnd, TEXT("slow"), WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 10, 410, 50, 20,
+                                hInst);
+
+
+    prcCapturedSignal = new Button(hMainWnd, TEXT("process captured:"),
+                                   WS_VISIBLE | WS_CHILD | BS_CHECKBOX | BS_RIGHTBUTTON, 80, 370, 130,
+                                   20,
+                                   hInst);
+    SendMessage(prcCapturedSignal->GetHWND(), BM_SETCHECK, BST_CHECKED, 0);
+    restartPrcButton = new Button(hMainWnd, TEXT("restart after pasting"),
+                                  WS_VISIBLE | WS_CHILD | BS_CHECKBOX | BS_AUTOCHECKBOX,
+                                  80, 400, 160, 20,
+                                  hInst);
+    SendMessage(restartPrcButton->GetHWND(), BM_SETCHECK, BST_CHECKED, 0);
+    SendMessage(prcCapturedSignal->GetHWND(), BM_SETCHECK, BST_UNCHECKED, 0);
+    SendMessage(modeSlowButton->GetHWND(), BM_CLICK, 0, 0);
+    SetWindowText(delayEditor->GetHWND(), delayDefault);
 
 }
 
 MainWindow::~MainWindow() {
     delete startButton;
+    delete textEditor;
+    delete prcCapturedSignal;
+    delete modeSlowButton;
+    delete modeFastButton;
+    delete delayStatic;
     delete pasteButton;
     delete clearButton;
-    delete delayTrackBar;
-    delete textEditor;
-    delete delayInfo;
+    delete delayEditor;
+    delete restartPrcButton;
+    if (AuroraPrc)
+        delete AuroraPrc;
 }
 
 void MainWindow::RelocateControls(int deltaX, int deltaY) {
+
+    restartPrcButton->MoveControl(deltaX, deltaY);
     startButton->MoveControl(deltaX, deltaY);
-    clearButton->MoveControl(deltaX, deltaY);
-    delayTrackBar->MoveControl(deltaX, deltaY);
+    modeSlowButton->MoveControl(deltaX, deltaY);
+    modeFastButton->MoveControl(deltaX, deltaY);
+    delayStatic->MoveControl(deltaX, deltaY);
+    delayEditor->MoveControl(deltaX, deltaY);
     pasteButton->MoveControl(deltaX, deltaY);
+    clearButton->MoveControl(deltaX, deltaY);
+    prcCapturedSignal->MoveControl(deltaX, deltaY);
     textEditor->ResizeControl(deltaX, deltaY);
-    delayInfo->MoveControl(deltaX, deltaY);
+
 }
 
-void MainWindow::SetKeyPressEmulatorFunc(std::function<bool(const TCHAR *, unsigned)> *callbackFunc) {
-    cStyleCallbackUsed = false;
-    keyEmulatorCallback.stdFunctionalCallback = new std::function<bool(const TCHAR *textPtr, unsigned length)>;
-    keyEmulatorCallback.stdFunctionalCallback = callbackFunc;
-}
-
-void MainWindow::SetKeyPressEmulatorFunc(bool (*classicCallback)(const TCHAR *, unsigned)) {
-    cStyleCallbackUsed = true;
-    keyEmulatorCallback.classicCallback = classicCallback;
-}
 
 int MainWindow::PrintText() {
-    Sleep(SendMessage(delayTrackBar->GetHWND(), TBM_GETPOS, 0, 0));
+    Sleep(3000);
     unsigned length = GetWindowTextLength(textEditor->GetHWND());
     editorTextPtr.require(length + 1);
     editorTextPtr.zeroAll();
     GetWindowText(textEditor->GetHWND(), editorTextPtr.getPtr(), length + 1);
-    return callBack(editorTextPtr.getPtr(), length);
+    InputSimulator *inptSim = InputSimulator::GetInstance();
+    bool res = inptSim->WriteText(editorTextPtr.getPtr(), length);
+    if (processCaptured && outType == OutputType::FAST && restartPrc) {
+        Sleep(100);
+        if (!AuroraPrc->proc.IsAlive())
+            AuroraPrc->proc.Start();
+    }
+    return res;
 }
 
-int MainWindow::callBack(TCHAR *text, unsigned length) {
-    return (cStyleCallbackUsed) ? (keyEmulatorCallback.classicCallback(text, length))
-                                : ((*(keyEmulatorCallback.stdFunctionalCallback))(text, length));
-}
 
 #define SHOW_CLIPBOARD_ERROR_MSG MessageBox(NULL, TEXT("Something went wrong with clipboard, close this message and try again"), TEXT("Error"),MB_OK | MB_ICONWARNING)
+
 void MainWindow::FillEditFromClipboard() {
     if (!OpenClipboard(hMainWnd)) {
         SHOW_CLIPBOARD_ERROR_MSG;
@@ -160,18 +203,40 @@ void MainWindow::FillEditFromClipboard() {
     GlobalUnlock(hClipbrdData);
     CloseClipboard();
 }
+
 #undef SHOW_CLIPBOARD_ERROR_MSG
 
+void MainWindow::SetSlowMode(bool slowSet) {
+    outType = (slowSet) ? (OutputType::SLOW) : (OutputType::FAST);
+    EnableWindow(restartPrcButton->GetHWND(), !slowSet);
+    EnableWindow(delayEditor->GetHWND(), slowSet);
+    EnableWindow(delayStatic->GetHWND(), slowSet);
+    if (slowSet)
+        inpSimulator->SetOutputType(OutputType::SLOW);
+    else
+        inpSimulator->SetOutputType(OutputType::FAST);
+}
+
+void MainWindow::SetExecPath(TCHAR *path) {
+    if (AuroraPrc)
+        delete AuroraPrc;
+    AuroraPrc = new ProcessOverlord(path);
+    if (!AuroraPrc->proc.Start()) {
+        MessageBox(NULL, TEXT("Couldn't start process, error occured"), TEXT("Error"), MB_OK | MB_ICONWARNING);
+        delete AuroraPrc;
+        processCaptured = false;
+    } else {
+        processCaptured = true;
+        SendMessage(prcCapturedSignal->GetHWND(), BM_SETCHECK, BST_CHECKED, 0);
+        inpSimulator->SetPrcOverlord(AuroraPrc);
+    }
+
+}
+
+
 Control::Control(HWND
-                 hParentWindow, DWORD
-                 style,
-                 const TCHAR *clsName,
-                 const TCHAR *name,
-                 int x,
-                 int y,
-                 int width,
-                 int height,
-                 HINSTANCE hInst) {
+                 hParentWindow, DWORD style, const TCHAR *clsName, const TCHAR *name, int x,
+                 int y, int width, int height, HINSTANCE hInst) {
     controlHandle = CreateWindow(clsName, name, style, x, y, width, height, hParentWindow, NULL, hInst, NULL);
     this->x = x;
     this->y = y;
@@ -190,60 +255,35 @@ void TrackBar::SetBuddys(HWND hMainWnd, const TCHAR *fistText, const TCHAR *seco
 
 }
 
-Static::Static(HWND
-               hParentWindow,
-               const TCHAR *name,
-               int x,
-               int y,
-               int width,
-               int height, HINSTANCE
-               hInstance)
-        : Control(
-        hParentWindow, WS_VISIBLE | WS_CHILD | SS_LEFT, WC_STATIC, name, x, y,
+Static::Static(HWND hParentWindow,
+               const TCHAR *name,int x,int y,int width,int height, HINSTANCE hInstance)
+        : Control(hParentWindow, WS_VISIBLE | WS_CHILD | SS_LEFT, WC_STATIC, name, x, y,
         width, height, hInstance) {}
 
 Control::~Control() {
     DestroyWindow(controlHandle);
 }
 
-Edit::Edit(HWND
-           hParentWindow,
-           const TCHAR *name,
-           int x,
-           int y,
-           int width,
-           int height, HINSTANCE
-           hInstance) :
-        Control(hParentWindow, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_LEFT | WS_HSCROLL | WS_VSCROLL | ES_MULTILINE,
-                WC_EDIT, TEXT(""),
-                x, y,
-                width, height,
-                hInstance) {}
+Edit::Edit(HWND hParentWindow, const TCHAR *name,int x,int y,int width,int height, HINSTANCE hInstance) :
+        Control(hParentWindow, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_LEFT | WS_HSCROLL | WS_VSCROLL | ES_MULTILINE, WC_EDIT, TEXT(""), x, y, width, height, hInstance) {}
 
-Button::Button(HWND
-               hParentWindow,
-               const TCHAR *name,
-               int x,
-               int y,
-               int width,
-               int height, HINSTANCE
-               hInstance) :
+Edit::Edit(HWND hParentWindow, const TCHAR *name, DWORD style, int x, int y, int width, int height, HINSTANCE hInstance)
+        : Control(hParentWindow, style,
+                  WC_EDIT, TEXT(""),
+                  x, y, width, height, hInstance) {}
+
+Button::Button(HWND hParentWindow,const TCHAR *name,int x,int y,int width,int height, HINSTANCE hInstance) :
         Control(hParentWindow, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, WC_BUTTON, name, x, y,
                 width, height,
                 hInstance) {}
 
-TrackBar::TrackBar(HWND
-                   hParentWindow,
-                   const TCHAR *name,
-                   int x,
-                   int y,
-                   int width,
-                   int height, HINSTANCE
-                   hInstance) :
+Button::Button(HWND hParentWindow, const TCHAR *name, DWORD style, int x, int y, int width, int height,
+               HINSTANCE hInstance) :
+        Control(hParentWindow, style, WC_BUTTON, name, x, y,width, height,hInstance) {}
+
+TrackBar::TrackBar(HWND hParentWindow, const TCHAR *name, int x, int y, int width, int height, HINSTANCE hInstance) :
         Control(hParentWindow, WS_VISIBLE | WS_CHILD, TRACKBAR_CLASS,
-                name, x, y,
-                width, height,
-                hInstance) {}
+                name, x, y, width, height, hInstance) {}
 
 bool Control::SetSubclassPrc(LRESULT CALLBACK(*subFunc)(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)) {
     return SetWindowSubclass(controlHandle, subFunc, 0, 0);
