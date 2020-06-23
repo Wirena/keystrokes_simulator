@@ -227,6 +227,7 @@ void MainWindow::SetExecPath(TCHAR *path) {
         processCaptured = false;
     } else {
         processCaptured = true;
+        restartPrc = true;
         SendMessage(prcCapturedSignal->GetHWND(), BM_SETCHECK, BST_CHECKED, 0);
         inpSimulator->SetPrcOverlord(AuroraPrc);
     }
